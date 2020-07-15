@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Bootstrap Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+	<div class="jumbotron text-center">
+	  <h1>Greeting UI</h1>
+	  <p>UI for adding, updating and deleting greetings as part of Labforward Code Challenge for Backend Engineer Candidate.</p>
+	  <p>Have fun!</p>
+	</div>
+  
+	<div class="container">
+ 		  <button id="createbtn"  type="button" class="btn btn-success">Create Greeting</button>
+ 		  <table class="table table-striped">
+			<thead>
+			  <tr>
+				<th>Id</th>
+				<th>Greeting</th>
+				<th></th>
+				<th></th>
+			  </tr>
+			</thead>
+			<tbody id="tablecontent"></tbody>
+		  </table>
+	</div>
+	
+	<!-- Editor -->
+	<div class="modal" tabindex="-1" role="dialog">
+	  <div class="modal-dialog" role="document">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h5 class="modal-title">Greeting</h5>
+	        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+	          <span aria-hidden="true">&times;</span>
+	        </button>
+	      </div>
+	      <div class="modal-body">
+		  <div class="form-group">
+		    <textarea class="form-control" id="message" placeholder="Message"></textarea>
+		    <small class="form-text text-muted">You will never miss any messages.</small>
+		  </div>
+	      </div>
+	      <div class="modal-footer">
+	        <button id="savebutton" type="button" class="btn btn-primary">Save</button>
+	        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+</body>
+
+
+<script>
+
+var messages=[];
+var apiUrl="/hello";
+
+getTableRaw=function(message){
+	  return '<tr>'+
+		'<td>'+message.id+'</td>'+
+		'<td>'+message.message+'</td>'+
+		'<td><button type="button" class="btn btn-warning"  onclick="updateMessage(\''+message.id+'\')">Update Greeting</button></td>'+
+		'<td><button type="button" class="btn btn-danger" onclick="deleteMessage(\''+message.id+'\')">Delete Greeting</button></td>'+
+	  '</tr>';
+}
+
+renderTable=function(){
+	$.ajax({
+	    url: apiUrl, 
+	    success: function (data) {
+	        messages=data;
+	    	var table=$("#tablecontent");
+	    	table.empty();
+	    	$.each(data, function( index, message ) {
+	    		table.append(getTableRaw(message));
+	    	});
+	    }
+	})
+}
+
+//initial renderring of the table data
+renderTable();
+
+//Creating a new message 
+$("#createbtn").click(function(){
+	//creating modal and setting an action attribute as POST
+	$('.modal').attr('action','POST').modal(); 
+	$("#message").val("");
+});
+
+updateMessage=function(messageId){
+	var message=$.grep( messages, function( message, i ) { return message.id==messageId; });
+	$("#message").val(message[0].message);
+	//creating modal and setting an action attribute as PUT also applying messageId
+	$('.modal').attr('action','PUT').attr('messageId', messageId).modal(); 
+};
+
+deleteMessage=function(messageId){
+	$.ajax({
+	    url: apiUrl+'/'+messageId,
+	    type: 'DELETE',
+	    success: function(result) {
+	    	renderTable();
+	    }
+	});
+};
+ 
+$("#savebutton").click(function(){
+	if($("#message").val() == ''){
+      alert('Please type a greeting');
+    } else {
+		var action =$('.modal').attr('action');
+		var actionUrl=apiUrl;
+		var message=$("#message").val();
+		if(action=='PUT'){
+			actionUrl=actionUrl+"/"+$('.modal').attr('messageId');
+		}
+		
+		var data={"message": message};
+		
+		$.ajax({
+			url: actionUrl,
+			type: action,
+			data: JSON.stringify(data),
+			contentType: "application/json",
+			success: function(data){
+				renderTable();
+			},
+			error: function(error){
+				
+			}
+		});
+		$('.modal').modal('hide');
+	}
+});
+</script>
+</html>
+
